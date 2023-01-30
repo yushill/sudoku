@@ -2,9 +2,8 @@
                                  cell.hh                                  
                              -----------------
     begin                : Thu May 22 2003
-    copyright            : (C) 2003-2011 CEA and Universite Paris Sud
     authors              : Yves Lhuillier
-    email                : yves.lhuillier@cea.fr
+    email                : yves.lhuillier@gmail.com
 ***************************************************************************/
 
 /***************************************************************************
@@ -28,28 +27,34 @@
 
 struct Cell
 {
+  enum { count = 9, all = 0x3fe };
+  struct Figure { unsigned value; };
+  struct Figures { unsigned value; };
+
   Cell();
-  Cell( bool _lite );
-  Cell( bool _lite, unsigned _f );
+  Cell( Figure fig );
+  Cell( Figures figs );
+
 
   Cell                operator & ( Cell const& _f ) const;
   Cell                operator | ( Cell const& _f ) const;
   Cell                operator ~ () const;
   
+  bool                keep( Cell const& exc );
   Cell&               operator = ( Cell const& _f );
   Cell&               operator &= ( Cell const& rhs );
   
-  bool                  operator == ( Cell const& _f ) const;
-  bool                  operator != ( Cell const& _f ) const;
+  bool                operator == ( Cell const& _f ) const;
+  bool                operator != ( Cell const& _f ) const;
   operator bool () const;
-  unsigned              figure() const;
+  unsigned            figures() const { return bits; }
+  unsigned            popcount() const { return __builtin_popcount(bits); }
+  unsigned            figure() const;
   
-  std::ostream&         dump( std::ostream& ) const;
+  std::ostream&       dump( std::ostream& ) const;
 
 private:
-  uint32_t              figures;
-  
-  Cell( uint32_t );
+  unsigned            bits;
 };
 
 #endif // CELL_H

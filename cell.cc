@@ -2,9 +2,8 @@
                                  cell.cc                                  
                              -----------------
     begin                : Thu May 22 2003
-    copyright            : (C) 2003-2011 CEA and Universite Paris Sud
     authors              : Yves Lhuillier
-    email                : yves.lhuillier@cea.fr
+    email                : yves.lhuillier@gmail.com
 ***************************************************************************/
 
 /***************************************************************************
@@ -26,74 +25,78 @@
 using namespace std;
 
 Cell::Cell()
-  : figures( 0x03fe )
+  : bits( all )
 {}
 
-Cell::Cell( bool _lite = false )
-  : figures( _lite ? 0x03fe : 0x0000 )
+// Cell::Cell( bool lite = false )
+//   : bits( _lite ? all : 0x0000 )
+// {}
+
+// Cell::Cell( bool _lite, unsigned fig )
+//   : bits( (_lite ? (1ul << fig):~(1ul << fig)) & all )
+// {}
+
+Cell::Cell( Figure fig )
+  : bits( (1 << fig.value) & all  )
 {}
 
-Cell::Cell( bool _lite, unsigned fig )
-  : figures( (_lite ? (1ul << fig):~(1ul << fig)) & 0x03fe )
-{}
-
-Cell::Cell( uint32_t _flags )
-  : figures( _flags & 0x03fe )
+Cell::Cell( Figures figs )
+  : bits( figs.value & all  )
 {}
 
 Cell
 Cell::operator & ( Cell const& _f ) const
 {
-  return Cell( (figures & _f.figures) & 0x03fe );
+  return Cell::Figures{bits & _f.bits};
 }
 
 Cell
 Cell::operator | ( Cell const& _f ) const
 {
-  return Cell( (figures | _f.figures) & 0x03fe );
+  return Cell::Figures{bits | _f.bits};
 }
 
 Cell
 Cell::operator ~ () const
 {
-  return Cell( (~figures) & 0x03fe );
+  return Cell::Figures{(~bits) & all};
 }
 
 Cell&
 Cell::operator = ( Cell const& _f )
 {
-  figures = _f.figures & 0x03fe;
+  bits = _f.bits & all;
   return *this;
 }
 
 Cell&
 Cell::operator &= ( Cell const& rhs )
 {
-  figures &= rhs.figures & 0x03fe;
+  bits &= rhs.bits & all;
   return *this;
 }
 
 bool
 Cell::operator == ( Cell const& _f ) const
 {
-  return (figures & 0x03fe) == (_f.figures & 0x03fe);
+  return (bits & all) == (_f.bits & all);
 }
 
 bool
 Cell::operator != ( Cell const& _f ) const
 {
-  return (figures & 0x03fe) != (_f.figures & 0x03fe);
+  return (bits & all) != (_f.bits & all);
 }
 
 unsigned
 Cell::figure() const
 {
-  return (figures & (figures -1)) ? 0 : __builtin_ctz(figures);
+  return (bits & (bits -1)) ? 0 : __builtin_ctz(bits);
 }
 
 Cell::operator bool () const
 {
-  return figures != 0ul;
+  return bits != 0ul;
 }
 
 ostream&
@@ -101,7 +104,7 @@ Cell::dump( ostream& _sink ) const
 {
   for (int idx = 9; idx > 0; idx--)
     {
-      if ((figures >> idx) & 1)
+      if ((bits >> idx) & 1)
         _sink << idx;
       else
         _sink << '-';
@@ -109,3 +112,13 @@ Cell::dump( ostream& _sink ) const
 
   return _sink;
 }
+
+bool
+Cell::keep( Cell const& k )
+{
+  unsigned old_figures = bits;
+  unsigned new_figures = old_figures & k.bits;
+  bits = new_figures;
+  return new_figures != old_figures;
+}
+

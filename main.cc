@@ -2,9 +2,8 @@
                                   main.cc                                   
                              -----------------
     begin                : Thu May 22 2003
-    copyright            : (C) 2003-2011 CEA and Universite Paris Sud
     authors              : Yves Lhuillier
-    email                : yves.lhuillier@cea.fr
+    email                : yves.lhuillier@gmail.com
 ***************************************************************************/
 
 /***************************************************************************
@@ -56,6 +55,7 @@ main( int argc, char** argv )
       std::cerr << "No solution...\n";
       return 1;
     }
+
 
   return 0;
 }
