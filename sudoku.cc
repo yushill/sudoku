@@ -72,7 +72,7 @@ Sudoku::figcount() const
 }
 
 bool
-Sudoku::rulestep()
+Sudoku::rulestep(std::ostream& logger)
 {
   for (auto const& combo: combinations)
     {
@@ -82,13 +82,33 @@ Sudoku::rulestep()
           {
             struct
             {
-              bool process(Sudoku& sudoku, Zone::Code zone, int idx, unsigned loc, Cell const& combo)
+              bool process(std::ostream& logger, Sudoku& sudoku, Zone::Code zone, int idx, unsigned loc, Cell const& combo)
               {
-                if (int delta = __builtin_popcount(loc) - combo.popcount())
+                unsigned popcount = combo.popcount();
+                if (int delta = __builtin_popcount(loc) - popcount)
                   if (delta < 0) throw PlayError(); else return false;
                 bool motion = false;
                 for (int offset = 0; offset < 9; ++offset)
                   motion |= ((loc >> offset) & 1 and sudoku.getcell(zone, idx, offset).keep(combo));
+                if (motion)
+                  {
+                    bool number_exclusion = popcount < 5;
+                    unsigned force = number_exclusion ? popcount : 9 - popcount;
+                    if (force > 1)
+                      {
+                        logger << "In " << Zone{zone} << " #" << (idx+1) << ", ";
+                        if (number_exclusion)
+                          {
+                            Cell positions( Cell::Figures{loc << 1} );
+                            logger << "positions " << positions.setfmt() << " can only host " << combo.setfmt() << "\n";
+                          }
+                        else
+                          {
+                            Cell positions( Cell::Figures{~(loc << 1)} ), ncombo( ~combo);
+                            logger << "figures " << ncombo.setfmt() << " can only be at " << positions.setfmt() << "\n";
+                          }
+                      }
+                  }
                 return motion;
               }
             } _;
@@ -101,10 +121,10 @@ Sudoku::rulestep()
                 if (cell & ncombo) exloc |= (1 << offset);
               }
 
-            if (_.process(*this, zone, idx, inloc,  combo))
+            if (_.process(logger, *this, zone, idx, inloc,  combo))
               return true;
 
-            if (_.process(*this, zone, idx, exloc, ncombo))
+            if (_.process(logger, *this, zone, idx, exloc, ncombo))
               return true;
           }
     }
@@ -297,7 +317,7 @@ Sudoku::play( std::ostream& logger, int _depth )
   dumpiteration( logger, step++, _depth );
 
   unsigned last_figcount = 0;
-  while (rulestep())
+  while (rulestep(logger))
     {
       if (int delta = figcount() - last_figcount)
         {
@@ -344,6 +364,13 @@ void
 Sudoku::save(std::ostream& sink) const
 {
   dump( sink );
+}
+
+std::ostream&
+Sudoku::Zone::print(std::ostream& sink) const
+{
+  sink << name();
+  return sink;
 }
 
 std::ostream&

@@ -28,7 +28,7 @@
 struct Cell
 {
   enum { count = 9, all = 0x3fe };
-  struct Figure { unsigned value; };
+  struct Figure { int value; };
   struct Figures { unsigned value; };
 
   Cell();
@@ -52,6 +52,13 @@ struct Cell
   unsigned            figure() const;
   
   std::ostream&       dump( std::ostream& ) const;
+  std::ostream&       printset( std::ostream& ) const;
+
+  struct SetFmt {
+    Cell const& cell;
+    friend std::ostream& operator << (std::ostream& sink, SetFmt const& ds) { return ds.cell.printset(sink); }
+  };
+  SetFmt              setfmt() const { return SetFmt{*this}; }
 
 private:
   unsigned            bits;

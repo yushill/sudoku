@@ -22,8 +22,6 @@
 #include <cell.hh>
 #include <ostream>
 
-using namespace std;
-
 Cell::Cell()
   : bits( all )
 {}
@@ -37,7 +35,7 @@ Cell::Cell()
 // {}
 
 Cell::Cell( Figure fig )
-  : bits( (1 << fig.value) & all  )
+  : bits( (1ul << fig.value) & all  )
 {}
 
 Cell::Cell( Figures figs )
@@ -99,18 +97,35 @@ Cell::operator bool () const
   return bits != 0ul;
 }
 
-ostream&
-Cell::dump( ostream& _sink ) const
+std::ostream&
+Cell::dump( std::ostream& sink ) const
 {
   for (int idx = 9; idx > 0; idx--)
     {
       if ((bits >> idx) & 1)
-        _sink << idx;
+        sink << idx;
       else
-        _sink << '-';
+        sink << '-';
     }
 
-  return _sink;
+  return sink;
+}
+
+std::ostream&
+Cell::printset( std::ostream& sink ) const
+{
+  sink << '{';
+  char const* sep = "";
+  for (int idx = 1; idx <= 9; ++idx)
+    {
+      if ((bits >> idx & 1) == 0)
+        continue;
+      sink << sep << idx;
+      sep = ",";
+    }
+  sink << '}';
+
+  return sink;
 }
 
 bool

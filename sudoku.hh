@@ -36,14 +36,20 @@ struct Sudoku
   void                  open(std::istream& source);
   void                  open(std::istream&& source) { return open( source ); }
   void                  play(std::ostream& logger, int _depth = 0);
-  bool                  rulestep();
+  bool                  rulestep(std::ostream& logger);
   void                  save(std::ostream& sink) const;
   void                  save(std::ostream&& sink) const { return save( sink ); }
   std::ostream&         dumpiteration( std::ostream& _sink, int _step, int _depth ) const;
   std::ostream&         dump(std::ostream& _sink, int _depth = 0) const;
   unsigned              figcount() const;
 
-  struct Zone { enum Code { Row, Column, Region, end, beg = Row  } code; };
+  struct Zone
+  {
+    enum Code { Row, Column, Region, end, beg = Row  } code;
+    char const* name() const { switch (code) { default: break; case Zone::Row: return "row"; case Zone::Column: return "column"; case Zone::Region: return "region"; } return "bad"; };
+    std::ostream& print(std::ostream& sink) const;
+    friend std::ostream& operator << (std::ostream& sink, Zone const& zone) { return zone.print( sink ); }
+  };
 
   Cell&                 getcell( Zone::Code, int index, int offset );
   
