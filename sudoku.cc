@@ -311,12 +311,10 @@ Sudoku::rulestep(std::ostream& logger)
 // }
 
 void
-Sudoku::play( std::ostream& logger, int _depth )
+Sudoku::play( std::ostream& logger, unsigned last_figcount, int _depth )
 {
   int step = 0;
-  dumpiteration( logger, step++, _depth );
 
-  unsigned last_figcount = 0;
   while (rulestep(logger))
     {
       if (int delta = figcount() - last_figcount)
@@ -346,7 +344,7 @@ Sudoku::play( std::ostream& logger, int _depth )
                   copy.cells[y][x] = trial;
                   try
                     {
-                      copy.play(logger, _depth + 1);
+                      copy.play(logger, last_figcount, _depth + 1);
                       *this = copy;
                       return;
                     }
