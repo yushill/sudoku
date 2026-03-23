@@ -1,5 +1,5 @@
 CXX        = g++
-CXXFLAGS   = -g3 -Wall
+CXXFLAGS   = -g3 -Wall -Werror -O3
 CXXPATHS   = -I.
 LDFLAGS    =
 RM         = rm -f

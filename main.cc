@@ -1,5 +1,5 @@
 /***************************************************************************
-                                  main.cc                                   
+                                  main.cc
                              -----------------
     begin                : Thu May 22 2003
     authors              : Yves Lhuillier
@@ -14,11 +14,6 @@
  *                                                                         *
  ***************************************************************************/
 
-/** @file main.cc
-    @brief 
-
-*/
-
 #include <sudoku.hh>
 #include <iostream>
 #include <fstream>
@@ -31,9 +26,9 @@ main( int argc, char** argv )
       std::cerr << "Usage: " << argv[0] << " <board_file>\n";
       return 1;
     }
-  
+
   Sudoku game;
-  
+
   try
     {
       std::string input_name = argv[1], output_name;
@@ -45,7 +40,7 @@ main( int argc, char** argv )
         else
           output_name = input_name + midfix;
       }
-      
+
       game.open(std::ifstream( input_name ));
       game.play(std::cout);
       game.save(std::ofstream( output_name ));

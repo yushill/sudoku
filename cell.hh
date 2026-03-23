@@ -1,5 +1,5 @@
 /***************************************************************************
-                                 cell.hh                                  
+                                 cell.hh
                              -----------------
     begin                : Thu May 22 2003
     authors              : Yves Lhuillier
@@ -14,11 +14,6 @@
  *                                                                         *
  ***************************************************************************/
 
-/** @file cell.hh
-    @brief 
-
-*/
-
 #ifndef CELL_H
 #define CELL_H
 
@@ -27,7 +22,6 @@
 
 struct Cell
 {
-  enum { count = 9, all = 0x3fe };
   struct Figure { int value; };
   struct Figures { unsigned value; };
 
@@ -39,18 +33,20 @@ struct Cell
   Cell                operator & ( Cell const& _f ) const;
   Cell                operator | ( Cell const& _f ) const;
   Cell                operator ~ () const;
-  
+
   bool                keep( Cell const& exc );
+  bool                filter( Cell& target, Cell& cleared ) const;
   Cell&               operator = ( Cell const& _f );
   Cell&               operator &= ( Cell const& rhs );
-  
+  Cell&               operator |= ( Cell const& rhs );
+
   bool                operator == ( Cell const& _f ) const;
   bool                operator != ( Cell const& _f ) const;
   operator bool () const;
   unsigned            figures() const { return bits; }
   unsigned            popcount() const { return __builtin_popcount(bits); }
   unsigned            figure() const;
-  
+
   std::ostream&       dump( std::ostream& ) const;
   std::ostream&       printset( std::ostream& ) const;
 
@@ -61,6 +57,7 @@ struct Cell
   SetFmt              setfmt() const { return SetFmt{*this}; }
 
 private:
+  enum { count = 9, all = 0x3fe };
   unsigned            bits;
 };
 

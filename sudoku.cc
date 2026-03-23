@@ -14,11 +14,6 @@
  *                                                                         *
  ***************************************************************************/
 
-/** @file sudoku.cc
-    @brief
-
-*/
-
 #include <sudoku.hh>
 #include <istream>
 #include <ostream>
@@ -26,7 +21,13 @@
 
 Sudoku::Combinations Sudoku::combinations;
 
-Sudoku::Sudoku() {}
+Sudoku::Sudoku()
+{
+  // Starting with all cells marked as all figures possible
+  for (int y = 0; y < 9; ++y)
+    for (int x = 0; x < 9; ++x)
+      cells[y][x] = ~Cell();
+}
 
 Sudoku::~Sudoku() {}
 
@@ -45,7 +46,7 @@ Sudoku::open( std::istream& source )
         cells[y][x] = Cell( Cell::Figure{c-'0'} );
         break;
       case 'x': case '.':
-        cells[y][x] = Cell();
+        cells[y][x] = ~Cell();
         break;
       default:
         idx--;
@@ -86,11 +87,11 @@ Sudoku::rulestep(std::ostream& logger)
               {
                 unsigned popcount = combo.popcount();
                 if (int delta = __builtin_popcount(loc) - popcount)
-                  if (delta < 0) throw PlayError(); else return false;
-                bool motion = false;
+                  { if (delta < 0) throw PlayError(); else return false; }
+                bool moving = false;
                 for (int offset = 0; offset < 9; ++offset)
-                  motion |= ((loc >> offset) & 1 and sudoku.getcell(zone, idx, offset).keep(combo));
-                if (motion)
+                  moving |= ((loc >> offset) & 1 and sudoku.getcell(zone, idx, offset).keep(combo));
+                if (moving)
                   {
                     bool number_exclusion = popcount < 5;
                     unsigned force = number_exclusion ? popcount : 9 - popcount;
@@ -109,7 +110,7 @@ Sudoku::rulestep(std::ostream& logger)
                           }
                       }
                   }
-                return motion;
+                return moving;
               }
             } _;
 
@@ -128,187 +129,58 @@ Sudoku::rulestep(std::ostream& logger)
               return true;
           }
     }
+
+  for (int ridx = 0; ridx < 9; ++ridx)
+    {
+      bool moving = false;
+      for (int idx = 0; idx < 3; ++idx)
+        {
+          // Column
+          int rx = ridx % 3, ry = ridx / 3;
+          Cell rcfilter, crfilter, rlfilter, lrfilter;
+          for (int offset = 0; offset < 9; ++offset)
+            {
+              // Missing from column outside region
+              if (offset/3 != ry)
+                rcfilter |= getcell(Zone::Column, rx*3+idx, offset);
+              // Missing from region outside column
+              if (offset%3 != idx)
+                crfilter |= getcell(Zone::Region, ridx,     offset);
+              // Missing from row outside region
+              if (offset/3 != rx)
+                rlfilter |= getcell(Zone::Row,    ry*3+idx, offset);
+              // Missing from region outside row
+              if (offset/3 != idx)
+                lrfilter |= getcell(Zone::Region, ridx,     offset);
+            }
+          Cell rccleared, crcleared, rlcleared, lrcleared;
+          for (int offset = 0; offset < 9; ++offset)
+            {
+              if (offset%3 != idx)
+                moving |= rcfilter.filter(getcell(Zone::Region, ridx,     offset), rccleared);
+              if (offset/3 != ry)
+                moving |= crfilter.filter(getcell(Zone::Column, rx*3+idx, offset), crcleared);
+              if (offset/3 != idx)
+                moving |= rlfilter.filter(getcell(Zone::Region, ridx,     offset), rlcleared);
+              if (offset/3 != rx)
+                moving |= lrfilter.filter(getcell(Zone::Row,    ry*3+idx, offset), lrcleared);
+            }
+
+          if (rccleared.figures())
+            logger << "In region #" << (ridx+1) << ", figures " << rccleared.setfmt() << " can only be from column #" << (rx*3+idx+1) << "\n";
+          if (crcleared.figures())
+            logger << "In column #" << (rx*3+idx+1) << ", figures " << crcleared.setfmt() << " can only be from region #" << (ridx+1) << "\n";
+          if (rlcleared.figures())
+            logger << "In region #" << (ridx+1) << ", figures " << rlcleared.setfmt() << " can only be from row #" << (ry*3+idx+1) << "\n";
+          if (lrcleared.figures())
+            logger << "In row #" << (ry*3+idx+1) << ", figures " << lrcleared.setfmt() << " can only be from region #" << (ridx+1) << "\n";
+        }
+      if (moving)
+        return true;
+    }
+
   return false;
 }
-
-// bool
-// Sudoku::rulestep()
-// {
-//   // Direct-rule application
-//   for (int y = 0; y < 9; y++)
-//     {
-//       for (int x = 0; x < 9; x++)
-//         {
-//           if (not cells[y][x])
-//             throw PlayError();
-
-//           int fig = cells[y][x].figure();
-
-//           if (fig == 0)
-//             continue;
-
-//           Cell filter = ~Cell( Cell::Figure{fig} );
-//           // applying row rules
-//           for (int xx = 0; xx < 9; xx++)
-//             {
-//               if (xx == x)
-//                 continue;
-//               cells[y][xx] &= filter;
-//             }
-
-//           // applying col rules
-//           for (int yy = 0; yy < 9; yy++)
-//             {
-//               if (yy == y)
-//                 continue;
-//               cells[yy][x] &= filter;
-//             }
-
-//           // applying block rules
-//           int xbase = (x/3)*3;
-//           int ybase = (y/3)*3;
-//           for (int idx = 0; idx < 9; idx++)
-//             {
-//               int xx = xbase + (x % 3);
-//               int yy = ybase + (y / 3);
-//               if (xx == x and yy == y)
-//                 continue;
-//               cells[yy][xx] &= filter;
-//             }
-//         }
-//     }
-
-//   // blocked col-row filtering rule (pseudo localization)
-//   for (int fig = 1; fig <= 9; fig++)
-//     {
-//       Cell figure( Cell::Figure{fig} );
-//       Cell filter = ~figure;
-
-//       for (int meta = 0; meta < 9; meta++)
-//         {
-//           int ybase = (meta / 3)*3;
-//           int xbase = (meta % 3)*3;
-//           int col = -1;
-//           int row = -1;
-//           for (int idx = 0; idx < 9; idx++)
-//             {
-//               int yy = ybase + (idx/3);
-//               int xx = xbase + (idx%3);
-//               if (cells[yy][xx] & figure)
-//                 {
-//                   if( col == -1 or col == xx )
-//                     col = xx;
-//                   else
-//                     col = -2;
-//                   if( row == -1 or row == yy )
-//                     row = yy;
-//                   else
-//                     row = -2;
-//                 }
-//             }
-
-//           if (col >= 0 and col < 9 and row < 0)
-//             {
-//               // col lozalisation
-//               for (int y = 0; y < 9; y++)
-//                 {
-//                   if( (meta/3) == (y/3) )
-//                     continue;
-//                   cells[y][col] = cells[y][col] & filter;
-//                 }
-//             }
-
-//           if (row >= 0 and row < 9 and col < 0)
-//             {
-//               // row localization
-//               for( int x = 0; x < 9; x++ ) {
-//                 if( (meta%3) == (x/3) )
-//                   continue;
-//                 cells[row][x] = cells[row][x] & filter;
-//               }
-//             }
-//         }
-//     }
-
-//   // unknown
-//   for (int fig = 1; fig <= 9; fig++)
-//     {
-//       Cell figure( Cell::Figure{fig} );
-
-//       // applying row rules
-//       for (int y = 0; y < 9; y++)
-//         {
-//           int xx = -1;
-//           for (int x = 0; x < 9; x++)
-//             {
-//               if (cells[y][x] & figure)
-//                 {
-//                   if (xx == -1)
-//                     xx = x;
-//                   else
-//                     xx = -2;
-//                 }
-//             }
-
-//           if (xx == -1)
-//             throw PlayError();
-
-//           if (xx >= 0 and xx < 9)
-//             cells[y][xx] = figure;
-//         }
-
-//       // applying col rules
-//       for (int x = 0; x < 9; x++)
-//         {
-//           int yy = -1;
-//           for (int y = 0; y < 9; y++)
-//             {
-//               if (cells[y][x] & figure)
-//                 {
-//                   if (yy == -1)
-//                     yy = y;
-//                   else
-//                     yy = -2;
-//                 }
-//             }
-
-//           if( yy == -1 )
-//             throw PlayError();
-
-//           if( yy >= 0 and yy < 9 )
-//             cells[yy][x] = figure;
-//         }
-
-//       // applying block rules
-//       for (int meta = 0; meta < 9; meta++)
-//         {
-//           int ybase = (meta / 3)*3;
-//           int xbase = (meta % 3)*3;
-//           int idx2 = -1;
-//           for (int idx = 0; idx < 9; idx++)
-//             {
-//               int yy = ybase + (idx/3);
-//               int xx = xbase + (idx%3);
-//               if (cells[yy][xx] & figure)
-//                 {
-//                   if (idx2 == -1)
-//                     idx2 = idx;
-//                   else
-//                     idx2 = -2;
-//                 }
-//             }
-
-//           if( idx2 == -1 )
-//             throw PlayError();
-
-//           if( idx2 >= 0 and idx2 < 9 ) {
-//             int yy = ybase + (idx2/3);
-//             int xx = xbase + (idx2%3);
-//             cells[yy][xx] = figure;
-//           }
-//         }
-//     }
-// }
 
 void
 Sudoku::play( std::ostream& logger, unsigned last_figcount, int _depth )
@@ -397,8 +269,8 @@ Sudoku::dump(std::ostream& _sink, int _depth) const
 Sudoku&
 Sudoku::operator=( Sudoku const& _s )
 {
-  for( int y = 0; y < 9; y++ )
-    for( int x = 0; x < 9; x++ )
+  for (int y = 0; y < 9; y++)
+    for (int x = 0; x < 9; x++)
       cells[y][x] = _s.cells[y][x];
   return *this;
 }
@@ -406,9 +278,9 @@ Sudoku::operator=( Sudoku const& _s )
 bool
 Sudoku::operator!=( Sudoku const& _s ) const
 {
-  for( int y = 0; y < 9; y++ )
-    for( int x = 0; x < 9; x++ )
-      if( cells[y][x] != _s.cells[y][x] )
+  for (int y = 0; y < 9; y++)
+    for (int x = 0; x < 9; x++)
+      if (cells[y][x] != _s.cells[y][x])
         return true;
   return false;
 }
@@ -418,6 +290,7 @@ Sudoku::getcell( Zone::Code code, int index, int offset )
 {
   switch (code)
     {
+    default: break;
     case Zone::Column:
       return cells[offset][index];
     case Zone::Region:
@@ -431,7 +304,6 @@ Sudoku::getcell( Zone::Code code, int index, int offset )
 
 Sudoku::Combinations::Combinations()
 {
-
   struct CellCmp { bool operator () ( Cell const& lhs, Cell const& rhs ) const {
     if (int delta = lhs.popcount() - rhs.popcount())
       return delta < 0;
@@ -439,7 +311,7 @@ Sudoku::Combinations::Combinations()
   } };
 
   std::set<Cell, CellCmp> build;
-  for (int idx = 0; idx < count; ++idx)
+  for (unsigned idx = 0; idx < count; ++idx)
     build.insert( Cell( Cell::Figures{idx<<1} ));
   std::copy(build.begin(), build.end(), &items[0] );
 }

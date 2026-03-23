@@ -1,5 +1,5 @@
 /***************************************************************************
-                                 cell.cc                                  
+                                 cell.cc
                              -----------------
     begin                : Thu May 22 2003
     authors              : Yves Lhuillier
@@ -14,33 +14,14 @@
  *                                                                         *
  ***************************************************************************/
 
-/** @file cell.cc
-    @brief 
-
-*/
-
 #include <cell.hh>
 #include <ostream>
 
-Cell::Cell()
-  : bits( all )
-{}
+Cell::Cell() : bits( 0 ) {}
 
-// Cell::Cell( bool lite = false )
-//   : bits( _lite ? all : 0x0000 )
-// {}
+Cell::Cell( Figure fig ) : bits( (1ul << fig.value) & all  ) {}
 
-// Cell::Cell( bool _lite, unsigned fig )
-//   : bits( (_lite ? (1ul << fig):~(1ul << fig)) & all )
-// {}
-
-Cell::Cell( Figure fig )
-  : bits( (1ul << fig.value) & all  )
-{}
-
-Cell::Cell( Figures figs )
-  : bits( figs.value & all  )
-{}
+Cell::Cell( Figures figs ) : bits( figs.value & all  ) {}
 
 Cell
 Cell::operator & ( Cell const& _f ) const
@@ -71,6 +52,13 @@ Cell&
 Cell::operator &= ( Cell const& rhs )
 {
   bits &= rhs.bits & all;
+  return *this;
+}
+
+Cell&
+Cell::operator |= ( Cell const& rhs )
+{
+  bits |= rhs.bits & all;
   return *this;
 }
 
@@ -135,5 +123,14 @@ Cell::keep( Cell const& k )
   unsigned new_figures = old_figures & k.bits;
   bits = new_figures;
   return new_figures != old_figures;
+}
+
+bool
+Cell::filter( Cell& target, Cell& cleared ) const
+{
+  Cell out = Cell::Figures{target.bits & ~bits};
+  cleared |= out;
+  target = Cell::Figures{target.bits & bits};
+  return out.bits;
 }
 

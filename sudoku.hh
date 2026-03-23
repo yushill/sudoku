@@ -1,5 +1,5 @@
 /***************************************************************************
-                                 sudoku.hh                                  
+                                 sudoku.hh
                              -----------------
     begin                : Thu May 22 2003
     authors              : Yves Lhuillier
@@ -14,25 +14,21 @@
  *                                                                         *
  ***************************************************************************/
 
-/** @file sudoku.hh
-    @brief 
-
-*/
-
 #ifndef SUDOKU_H
 #define SUDOKU_H
 
 #include <cell.hh>
 #include <iosfwd>
-#include <stdint.h>
+#include <vector>
+#include <cstdint>
 
 struct Sudoku
 {
   struct PlayError {};
-  
+
   Sudoku();
   ~Sudoku();
-  
+
   void                  open(std::istream& source);
   void                  open(std::istream&& source) { return open( source ); }
   void                  play(std::ostream& logger) { play(logger, 0, 0); }
@@ -53,7 +49,7 @@ struct Sudoku
   };
 
   Cell&                 getcell( Zone::Code, int index, int offset );
-  
+
   Sudoku&               operator=(Sudoku const& _s);
   bool                  operator!=(Sudoku const& _s) const;
 
