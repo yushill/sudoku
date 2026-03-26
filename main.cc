@@ -31,26 +31,15 @@ main( int argc, char** argv )
 
   try
     {
-      std::string input_name = argv[1], output_name;
-      {
-        char const* midfix = "_solv";
-        std::size_t pos = input_name.rfind('.');
-        if (pos != input_name.npos)
-          output_name = input_name.substr(0,pos) + midfix + input_name.substr(pos);
-        else
-          output_name = input_name + midfix;
-      }
-
-      game.open(std::ifstream( input_name ));
-      game.play(std::cout);
-      game.save(std::ofstream( output_name ));
+      std::ifstream source( argv[1] );
+      game.open( source );
+      game.play( std::cout );
     }
   catch( Sudoku::PlayError const& )
     {
       std::cerr << "No solution...\n";
       return 1;
     }
-
 
   return 0;
 }

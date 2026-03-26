@@ -230,12 +230,6 @@ Sudoku::play( std::ostream& logger, unsigned last_figcount, int _depth )
     }
 }
 
-void
-Sudoku::save(std::ostream& sink) const
-{
-  dump( sink );
-}
-
 std::ostream&
 Sudoku::Zone::print(std::ostream& sink) const
 {

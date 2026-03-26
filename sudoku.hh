@@ -34,8 +34,6 @@ struct Sudoku
   void                  play(std::ostream& logger) { play(logger, 0, 0); }
   void                  play(std::ostream& logger, unsigned last_figcount, int _depth);
   bool                  rulestep(std::ostream& logger);
-  void                  save(std::ostream& sink) const;
-  void                  save(std::ostream&& sink) const { return save( sink ); }
   std::ostream&         dumpiteration( std::ostream& _sink, int _step, int _depth ) const;
   std::ostream&         dump(std::ostream& _sink, int _depth = 0) const;
   unsigned              figcount() const;
